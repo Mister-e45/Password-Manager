@@ -10,6 +10,7 @@ import javax.crypto.spec.IvParameterSpec;
 public class LogInfo{
     String Username;
     String mdp;
+    String Accountname;
     byte[] cy_Username;
     byte[] cy_mdp;
     
