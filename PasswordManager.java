@@ -19,6 +19,8 @@ public class PasswordManager {
 
     private Map<String, String> userAccounts = new HashMap<>();
     private Map<String, Map<String, Map<String, String>>> userPasswords = new HashMap<>();
+    // Map pour stocker les utilisateurs avec leur username comme clé
+    private Map<String, User> users = new HashMap<>();
 
 
     private Vault vault;
@@ -63,11 +65,15 @@ public class PasswordManager {
 
     private void createAccount() {
         String username = getStringInput("Entrez un nom d'utilisateur : ");
-        while (username.trim().isEmpty()) {
-            System.out.println("Le nom d'utilisateur ne peut pas être vide.");
+        while (username.trim().isEmpty() || users.containsKey(username)) {
+            if (users.containsKey(username)) {
+                System.out.println("Ce nom d'utilisateur existe déjà. Veuillez en choisir un autre.");
+            } else {
+                System.out.println("Le nom d'utilisateur ne peut pas être vide.");
+            }
             username = getStringInput("Entrez un nom d'utilisateur : ");
         }
-
+    
         String masterPassword;
         do {
             masterPassword = getStringInput("Entrez un mot de passe maître (min. 16 caractères) : ");
@@ -75,17 +81,41 @@ public class PasswordManager {
                 System.out.println("Le mot de passe maître doit contenir au moins 16 caractères.");
             }
         } while (masterPassword.length() < 16);
-
+    
+        // Détection du rôle utilisateur/administrateur
+        boolean isAdmin = false;
+        String roleChoice = getStringInput("Voulez-vous créer un compte administrateur ? (oui/non) : ").trim().toLowerCase();
+    
+        if (roleChoice.equals("oui")) {
+            String adminCode = getStringInput("Entrez le code secret pour administrateur : ");
+            if (!adminCode.equals("groupe hp")) {
+                System.out.println("Code secret invalide. Création d'un compte utilisateur classique.");
+            } else {
+                isAdmin = true;
+            }
+        }
+    
+        // Générer un ID unique pour l'utilisateur
+        int userId = users.size() + 1;
+    
         try {
-            // Générer un sel
+            // Générer un sel pour le mot de passe
             byte[] salt = generateSalt();
             String hashedPassword = hashPassword(masterPassword, salt);
-            userAccounts.put(username, hashedPassword + ":" + Base64.getEncoder().encodeToString(salt));
+    
+            // Créer un nouvel utilisateur
+            User newUser = new User(userId, hashedPassword + ":" + Base64.getEncoder().encodeToString(salt), isAdmin, username, true);
+    
+            // Ajouter l'utilisateur à la liste
+            users.put(username, newUser);
+    
             System.out.println("Compte créé avec succès !");
+            System.out.println(newUser.toString()); // Afficher les détails de l'utilisateur (sans mot de passe)
         } catch (Exception e) {
             System.err.println("Erreur lors de la création du compte : " + e.getMessage());
         }
     }
+    
 
     private void loginAndPerformActions() {
         String username = getStringInput("Entrez votre nom d'utilisateur : ");
@@ -93,13 +123,13 @@ public class PasswordManager {
             System.out.println("Utilisateur introuvable. Veuillez créer un compte d'abord.");
             return;
         }
-
+    
         String masterPassword = getStringInput("Entrez votre mot de passe maître : ");
         String storedData = userAccounts.get(username);
         String[] parts = storedData.split(":");
         String hashedPassword = parts[0];
         byte[] salt = Base64.getDecoder().decode(parts[1]);
-
+    
         try {
             if (!verifyPassword(masterPassword, hashedPassword, salt)) {
                 System.out.println("Mot de passe maître incorrect.");
@@ -109,15 +139,18 @@ public class PasswordManager {
             System.err.println("Erreur lors de la vérification du mot de passe : " + e.getMessage());
             return;
         }
-
+    
         System.out.println("Connexion réussie !");
+        User loggedInUser = users.get(username);
+        boolean isAdmin = loggedInUser.isAdmin;
+    
         while (true) {
-            System.out.println("\nActions disponibles :");
-            System.out.println("1. Ajouter un identifiant pour un service");
-            System.out.println("2. Afficher les identifiants et mots de passe de tout les services");
-            System.out.println("2. Afficher l'identifiants et le mot de passe d'un service en particulier");
-            System.out.println("4. Se déconnecter");
-
+            if (isAdmin) {
+                showAdminMenu(); // Afficher le menu spécifique à l'administrateur
+            } else {
+                showUserMenu(); // Afficher le menu classique pour l'utilisateur
+            }
+    
             int choice = getIntInput("Votre choix : ");
             switch (choice) {
                 case 1:
@@ -129,15 +162,77 @@ public class PasswordManager {
                 case 3:
                     String serviceName = getStringInput("Entrez le nom du service à afficher : ").trim();
                     displayServiceCredentials(username, masterPassword, serviceName);
-                    break;    
+                    break;
                 case 4:
                     System.out.println("Déconnexion réussie !");
                     return;
+                case 5:
+                    if (isAdmin) {
+                        String userToDeactivate = getStringInput("Entrez le nom d'utilisateur à désactiver : ");
+                        deactivateUser(userToDeactivate);
+                    }
+                    break;
+                case 6:
+                    if (isAdmin) {
+                        displayLogs(); // Afficher les logs si l'utilisateur est administrateur
+                    }
+                    break;
                 default:
                     System.out.println("Choix invalide. Veuillez réessayer.");
             }
         }
     }
+    
+    // Afficher le menu pour les utilisateurs classiques
+    private void showUserMenu() {
+        System.out.println("\nActions disponibles :");
+        System.out.println("1. Ajouter un identifiant pour un service");
+        System.out.println("2. Afficher les identifiants et mots de passe de tout les services");
+        System.out.println("3. Afficher l'identifiant et le mot de passe d'un service en particulier");
+        System.out.println("4. Se déconnecter");
+    }
+    
+    // Afficher le menu pour les administrateurs
+    private void showAdminMenu() {
+        System.out.println("\nActions disponibles :");
+        System.out.println("1. Ajouter un identifiant pour un service");
+        System.out.println("2. Afficher les identifiants et mots de passe de tout les services");
+        System.out.println("3. Afficher l'identifiant et le mot de passe d'un service en particulier");
+        System.out.println("4. Se déconnecter");
+        System.out.println("5. Désactiver un utilisateur");
+        System.out.println("6. Afficher les logs des actions");
+    }
+    
+    // Désactiver un utilisateur
+    public void deactivateUser(String username) {
+        User user = users.get(username);
+        if (user != null && user.isActive()) {
+            user.isActive = false;
+            System.out.println("L'utilisateur " + username + " a été désactivé.");
+    
+            // Enregistrer l'action dans les logs
+            logInfo.logAction("Utilisateur " + username + " a été désactivé.");
+        } else {
+            System.out.println("Utilisateur introuvable ou déjà désactivé.");
+        }
+    }
+    
+    // Afficher les utilisateurs actifs
+    public void listActiveUsers() {
+        System.out.println("Utilisateurs actifs :");
+        for (User user : users.values()) {
+            if (user.isActive()) {
+                System.out.println(user.toString());
+            }
+        }
+    }
+    
+    // Afficher les logs des actions
+    public void displayLogs() {
+        logInfo.displayLogs(); // LogInfo est l'objet gérant les logs des actions
+    }
+    
+
 
     private void addService(String username, String masterPassword) {
         String serviceName = getStringInput("Nom du service (par ex. Netflix, Amazon) : ").trim();
@@ -365,7 +460,6 @@ public class PasswordManager {
     
         return new String(decryptedBytes, StandardCharsets.UTF_8);
     }
-
     public static void main(String[] args) {
         PasswordManager pm = new PasswordManager();
         pm.start();
