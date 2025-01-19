@@ -1,29 +1,38 @@
-import javax.xml.crypto.Data;
+import java.util.HashMap;
+import java.util.Set;
 
-public class Vault{
+public class Vault {
+    private HashMap<Integer, String> passwordStore;
+    private int nextServiceId; // This will ensure unique IDs for each service
 
-    Vault(){
-        dataBase = new DataBase();
+    public Vault() {
+        this.passwordStore = new HashMap<>();
+        this.nextServiceId = 1; // Start with ID 1
     }
 
-    public boolean open(String userName,String mdp){
-        /*on lit dans le fichier contenant les comptes utilisateurs ... */
-        return false;
+    // Stocker un mot de passe pour un service
+    public void storePassword(String encryptedPassword) {
+        int serviceId = nextServiceId++; // Generate a unique service ID
+        passwordStore.put(serviceId, encryptedPassword);
     }
 
-    public LogInfo getLogin(String account){
-        LogInfo logs = new LogInfo();
-        /* on fait des choses */
-        return logs;
+    // Récupérer le mot de passe d'un service
+    public String getPassword(int serviceId) {
+        return passwordStore.getOrDefault(serviceId, null);
     }
 
-    public boolean close(){
-
+    // Supprimer un mot de passe pour un service
+    public void deletePassword(int serviceId) {
+        passwordStore.remove(serviceId);
     }
-    
 
-    DataBase dataBase;
-    String currentAuthUSer;
-    boolean authenticated;
+    // Obtenir tous les identifiants de services enregistrés
+    public Set<Integer> getAllServiceIds() {
+        return passwordStore.keySet(); // Retourne l'ensemble des clés (serviceIds)
+    }
 
+    // Get the next service ID (for adding a new service)
+    public int getNextServiceId() {
+        return nextServiceId;
+    }
 }

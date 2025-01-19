@@ -1,4 +1,4 @@
-import javax.crypto.Cipher;
+giimport javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 
 import java.security.Key;
@@ -12,7 +12,7 @@ public class KeyGeneratorExample {
       //Creating a SecureRandom object
       SecureRandom secRandom = new SecureRandom();
       
-      //Initializing the KeyGenerator
+      //Initializing the KeyGeneratorKeyGenerat
       keyGen.init(secRandom);
       
       //Creating/Generating a key
