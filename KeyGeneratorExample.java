@@ -4,7 +4,7 @@ import javax.crypto.KeyGenerator;
 import java.security.Key;
 import java.security.SecureRandom;
 
-public class KeyGeneratorExample {
+public class KeyGeneratorExample {/* 
    public static void main(String args[]) throws Exception{
       //Creating a KeyGenerator object
       KeyGenerator keyGen = KeyGenerator.getInstance("DES");
@@ -25,5 +25,6 @@ public class KeyGeneratorExample {
       String msg = new String("Hi how are you");
       byte[] bytes = cipher.doFinal(msg.getBytes());      
       System.out.println(bytes);      
-   }
+   } */
 }
+
