@@ -65,9 +65,10 @@ public class DataBase {
             writer.write("# User Data");
             writer.newLine();
             for (User user : users) {
-                writer.write(user.username + ";" + user.getPassword() + ";" + user.isActive() + ";" + user.id);
+                writer.write(user.username + ";" + user.getPassword() + ";" + user.id);
                 writer.newLine();
             }
+            writer.newLine();
     
             // Save service passwords
             writer.write("# Service Passwords");

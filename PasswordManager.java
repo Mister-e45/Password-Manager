@@ -84,6 +84,18 @@ public class PasswordManager {
         } catch (Exception e) {
             System.err.println("Erreur lors de la création du compte : " + e.getMessage());
         }
+        // version avec le vault
+        try {
+            vault.addVaultUser(username, masterPassword);
+            // Générer un sel
+            byte[] salt = generateSalt();
+            String hashedPassword = hashPassword(masterPassword, salt);
+            userAccounts.put(username, hashedPassword + ":" + Base64.getEncoder().encodeToString(salt));
+            System.out.println("Compte créé avec succès !");
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la création du compte : " + e.getMessage());
+        }
+        //fin de version avec le vault
     }
 
     private void loginAndPerformActions() {
@@ -248,11 +260,15 @@ public class PasswordManager {
     }
 
     private void saveData() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, false))) {  // false pour écraser le fichier à chaque sauvegarde
+        vault.save(); // la ligne active 
+        /*try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, false))) {  // false pour écraser le fichier à chaque sauvegarde
             // Sauvegarde des utilisateurs
+            System.out.println("on est dans la fonction de sauvegarde");
             writer.write("# Section des utilisateurs");
             writer.newLine();
             for (User user : database.getAllUsers()) {
+                System.out.println("on entre dans la boucle des utilisateurs");
+                System.out.println(user.getUsername() + ";" + user.getUserId() + ";" + user.getPassword()); // print dans la console ce qui serait ecrit dans le fichier
                 writer.write(user.getUsername() + ";" + user.getUserId() + ";" + user.getPassword());
                 writer.newLine();
             }
@@ -271,7 +287,7 @@ public class PasswordManager {
             writer.newLine();
         } catch (IOException e) {
             System.err.println("Erreur lors de la sauvegarde des données : " + e.getMessage());
-        }
+        }*/
     }
     
 

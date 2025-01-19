@@ -4,10 +4,16 @@ import java.util.Set;
 public class Vault {
     private HashMap<Integer, String> passwordStore;
     private int nextServiceId; // This will ensure unique IDs for each service
+    private DataBase database;
 
     public Vault() {
         this.passwordStore = new HashMap<>();
         this.nextServiceId = 1; // Start with ID 1
+        database= new DataBase();
+    }
+
+    public void addVaultUser(User user){
+        database.addUser(user);
     }
 
     // Stocker un mot de passe pour un service
