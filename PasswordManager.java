@@ -286,7 +286,7 @@ public class PasswordManager {
         return Base64.getEncoder().encodeToString(encryptedData);
     }
 
-    private String decrypt(String encrywiptedData, String password) throws Exception {
+    private String decrypt(String encryptedData, String password) throws Exception {
         byte[] keyBytes = Arrays.copyOf(password.getBytes(StandardCharsets.UTF_8), 16); // Clé de 128 bits (16 octets)
         SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "AES");
     
