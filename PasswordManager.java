@@ -18,7 +18,8 @@ public class PasswordManager {
     private static final int KEY_LENGTH = 256;
 
     private Map<String, String> userAccounts = new HashMap<>();
-    private Map<String, Map<Integer, String>> userPasswords = new HashMap<>();
+    private Map<String, Map<String, Map<String, String>>> userPasswords = new HashMap<>();
+
 
     private Vault vault;
     private DataBase database;
@@ -113,8 +114,9 @@ public class PasswordManager {
         while (true) {
             System.out.println("\nActions disponibles :");
             System.out.println("1. Ajouter un identifiant pour un service");
-            System.out.println("2. Afficher les identifiants et mots de passe");
-            System.out.println("3. Se déconnecter");
+            System.out.println("2. Afficher les identifiants et mots de passe de tout les services");
+            System.out.println("2. Afficher l'identifiants et le mot de passe d'un service en particulier");
+            System.out.println("4. Se déconnecter");
 
             int choice = getIntInput("Votre choix : ");
             switch (choice) {
@@ -125,6 +127,10 @@ public class PasswordManager {
                     displayServices(username, masterPassword);
                     break;
                 case 3:
+                    String serviceName = getStringInput("Entrez le nom du service à afficher : ").trim();
+                    displayServiceCredentials(username, masterPassword, serviceName);
+                    break;    
+                case 4:
                     System.out.println("Déconnexion réussie !");
                     return;
                 default:
@@ -134,35 +140,96 @@ public class PasswordManager {
     }
 
     private void addService(String username, String masterPassword) {
-        String serviceName = getStringInput("Nom du service (par ex. Netflix, Amazon) : ");
-        String servicePassword = getStringInput("Mot de passe pour " + serviceName + " : ");
-
+        String serviceName = getStringInput("Nom du service (par ex. Netflix, Amazon) : ").trim();
+        String serviceUsername = getStringInput("Nom d'utilisateur pour " + serviceName + " : ").trim();
+        String servicePassword = getStringInput("Mot de passe pour " + serviceName + " : ").trim();
+    
+        if (serviceName.isEmpty() || serviceUsername.isEmpty() || servicePassword.isEmpty()) {
+            System.err.println("Tous les champs doivent être remplis !");
+            return;
+        }
+    
         try {
             String encryptedPassword = encrypt(servicePassword, masterPassword);
-            userPasswords.computeIfAbsent(username, k -> new HashMap<>()).put(userPasswords.size() + 1, encryptedPassword);
-            System.out.println("Identifiant pour " + serviceName + " ajouté avec succès !");
+    
+            // Initialisation de la liste des services pour l'utilisateur
+            Map<String, Map<String, String>> userServices = userPasswords.computeIfAbsent(username, k -> new HashMap<>());
+    
+            // Vérification des doublons et ajout du service
+            if (userServices.containsKey(serviceName)) {
+                System.err.println("Ce service existe déjà pour cet utilisateur !");
+            } else {
+                Map<String, String> credentials = new HashMap<>();
+                credentials.put("username", serviceUsername);
+                credentials.put("password", encryptedPassword);
+                userServices.put(serviceName, credentials);
+                System.out.println("Identifiant pour " + serviceName + " ajouté avec succès !");
+            }
         } catch (Exception e) {
             System.err.println("Erreur lors du chiffrement du mot de passe : " + e.getMessage());
         }
     }
+    
+    
 
     private void displayServices(String username, String masterPassword) {
-        Map<Integer, String> passwords = userPasswords.get(username);
-        if (passwords == null || passwords.isEmpty()) {
+        Map<String, Map<String, String>> userServices = userPasswords.get(username);
+        if (userServices == null || userServices.isEmpty()) {
             System.out.println("Aucun service enregistré pour cet utilisateur.");
             return;
         }
-
-        passwords.forEach((id, encryptedPassword) -> {
+    
+        System.out.println("Services enregistrés pour l'utilisateur : " + username);
+        userServices.forEach((serviceName, credentials) -> {
             try {
+                String serviceUsername = credentials.get("username");
+                String encryptedPassword = credentials.get("password");
                 String decryptedPassword = decrypt(encryptedPassword, masterPassword);
-                System.out.println("Service ID: " + id + ", Mot de passe : " + decryptedPassword);
+    
+                System.out.println("Service : " + serviceName);
+                System.out.println("  Nom d'utilisateur : " + serviceUsername);
+                System.out.println("  Mot de passe : " + decryptedPassword);
             } catch (Exception e) {
-                System.err.println("Erreur lors du déchiffrement : " + e.getMessage());
+                System.err.println("Erreur lors du déchiffrement pour le service " + serviceName + " : " + e.getMessage());
             }
         });
     }
+    
 
+
+    private void displayServiceCredentials(String username, String masterPassword, String serviceName) {
+        // Vérifier si l'utilisateur existe
+        Map<String, Map<String, String>> userServices = userPasswords.get(username);
+    
+        if (userServices == null || userServices.isEmpty()) {
+            System.out.println("Aucun service enregistré pour cet utilisateur.");
+            return;
+        }
+    
+        // Vérifier si le service existe pour cet utilisateur
+        Map<String, String> credentials = userServices.get(serviceName);
+    
+        if (credentials == null) {
+            System.out.println("Le service '" + serviceName + "' n'existe pas pour cet utilisateur.");
+            return;
+        }
+    
+        // Déchiffrer et afficher les informations du service
+        try {
+            String serviceUsername = credentials.get("username");
+            String encryptedPassword = credentials.get("password");
+            String decryptedPassword = decrypt(encryptedPassword, masterPassword);
+    
+            System.out.println("Informations pour le service : " + serviceName);
+            System.out.println("  Nom d'utilisateur : " + serviceUsername);
+            System.out.println("  Mot de passe : " + decryptedPassword);
+        } catch (Exception e) {
+            System.err.println("Erreur lors du déchiffrement : " + e.getMessage());
+        }
+    }
+    
+
+    
     private String hashPassword(String password, byte[] salt) throws Exception {
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, HASH_ITERATIONS, KEY_LENGTH);
         SecretKeyFactory factory = SecretKeyFactory.getInstance(HASH_ALGORITHM);
