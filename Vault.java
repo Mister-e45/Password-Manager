@@ -172,6 +172,21 @@ public class Vault {
         return salt;
     }
 
+   
+
+    public static String generatePassword() {
+        int length=16;
+        String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            password.append(CHARACTERS.charAt(random.nextInt(CHARACTERS.length())));
+        }
+
+        return password.toString();
+    }
+
     
     ////////////////////////////////////////////////////////////////////////////////////////////
     

@@ -71,15 +71,23 @@ public class PasswordManager {
             }
             username = getStringInput("Entrez un nom d'utilisateur : ");
         }
-    
+        
         String masterPassword;
-        do {
-            masterPassword = getStringInput("Entrez un mot de passe maître (min. 16 caractères) : ");
-            if (masterPassword.length() < 16) {
-                System.out.println("Le mot de passe maître doit contenir au moins 16 caractères.");
-            }
-        } while (masterPassword.length() < 16);
-    
+
+        String choix= getStringInput("Voulez-vous entrer un mot de passe ou en générer? (C/G):");
+        
+
+        if (choix.equals("E")){
+            do {
+                masterPassword = getStringInput("Entrez un mot de passe maître (min. 16 caractères) : ");
+                if (masterPassword.length() < 16) {
+                    System.out.println("Le mot de passe maître doit contenir au moins 16 caractères.");
+                }
+            } while (masterPassword.length() < 16);
+        }else{
+
+            masterPassword=vault.generatePassword();
+        }
         // Détection du rôle utilisateur/administrateur
         boolean isAdmin = false;
         String roleChoice = getStringInput("Voulez-vous créer un compte administrateur ? (oui/non) : ").trim().toLowerCase();
