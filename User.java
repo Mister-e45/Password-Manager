@@ -1,15 +1,17 @@
 public class User {
     public String username;   // Nom d'utilisateur
     private String passwordHash;  // Mot de passe (privé)
+    private String salt;
     public boolean isAdmin;   // Indique si l'utilisateur est un administrateur
     
 
 
     // Constructeur
-    public User( String username_,String password_hash, boolean isAdmin_) {
+    public User( String username_,String password_hash,String salt_, boolean isAdmin_) {
         passwordHash = password_hash;
         isAdmin = isAdmin_;
         username = username_;
+        salt=salt_;
         
     }
     
@@ -18,10 +20,16 @@ public class User {
     public String getPasswordHash() {
         return passwordHash;
     }
+    public String getPasswordSalt(){
+        return salt;
+    }
 
     // Setter pour mettre à jour le mot de passe
     public void setPasswordHash(String newPasswordHash) { // recuperer le hashe du mot de passe
         passwordHash = newPasswordHash;
+    }
+    public void setPasswordSalt(String newPasswordSalt){
+        salt=newPasswordSalt;
     }
     
 /* 

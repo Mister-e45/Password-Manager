@@ -29,14 +29,15 @@ public class DataBase {
                 if (!isServiceSection) {
                     // Process user data
                     String[] data = line.split(" ; ");
-                    if (data.length == 3) {
+                    if (data.length == 4) {
                         String username = data[0];
                         String masterPasswordHash = data[1];
+                        String salt=data[2];
                         boolean is_admin=false;
-                        if(data[2].equals("t")){
+                        if(data[3].equals("t")){
                             is_admin=true;
                         }
-                        User user = new User(username, masterPasswordHash, is_admin);
+                        User user = new User(username, masterPasswordHash,salt, is_admin);
                         addUser(user);
                     } else {
                         System.err.println("Invalid user data format: " + line);
@@ -48,9 +49,9 @@ public class DataBase {
                         String username = data[0];
                         String serviceName = data[1];
                         String infoIdService = data[2];
-                        String hashedPassword = data[3];
+                        String encryptedPassword = data[3];
 
-                        addUserInfo(username,serviceName,infoIdService,hashedPassword);
+                        addUserInfo(username,serviceName,infoIdService,encryptedPassword);
                     } else {
                         System.err.println("Invalid service password format: " + line);
                     }
@@ -69,10 +70,10 @@ public class DataBase {
             writer.newLine();
             for (User user : users.values()) {
                 if(user.isAdmin()){
-                    writer.write(user.getUsername() + " ; " + user.getPasswordHash()+" ; "+"t");
+                    writer.write(user.getUsername() + " ; " + user.getPasswordHash()+" ; "+ user.getPasswordSalt() +" ; "+"t");
                 }
                 else{
-                    writer.write(user.getUsername() + " ; " + user.getPasswordHash()+" ; "+"f");
+                    writer.write(user.getUsername() + " ; " + user.getPasswordHash()+" ; "+ user.getPasswordSalt() +" ; "+"f");
                 }
                 writer.newLine();
             }
@@ -135,10 +136,10 @@ public class DataBase {
         }
         return true;
     }
-    public void addUserInfo(String username, String service, String logUsername, String cryptedPassword){
+    public void addUserInfo(String username, String service, String logUsername, String encryptedPassword){
         Map<String, String[]> info = userPasswords.get(username);
-        if (cryptedPassword != null) {
-            String[] logPair = {logUsername,cryptedPassword};
+        if (encryptedPassword != null) {
+            String[] logPair = {logUsername,encryptedPassword};
             info.put(service, logPair);
         }
     }

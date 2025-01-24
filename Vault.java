@@ -39,12 +39,12 @@ public class Vault {
      
         User user=database.getUserByUsername(username);
         
-        byte[] salt = generateSalt();
+        byte[] salt = Base64.getDecoder().decode( user.getPasswordSalt() );
         
         try{
             String hashedpassword = hashPassword(password, salt);
             if (!hashedpassword.equals(database.getPasswordHash(username))){
-                System.out.println("Le mot de passe de '" + username + "' est incorrecte.");
+                System.out.println("Le mot de passe de '" + username + "' est incorrect.");
                 return false;
             }
         
@@ -60,7 +60,15 @@ public class Vault {
     
     
     public void addUser(String username, String password, boolean admin){
-        User user = new User(username, password, admin);
+        byte[] salt = generateSalt();
+        String string_salt= Base64.getEncoder().encodeToString(salt);
+        String hashedPassword = null ;
+        try{
+        hashedPassword = hashPassword(password, salt);
+        }catch(Exception e){
+            System.out.println(e.getMessage());
+        }
+        User user = new User(username, password,string_salt, admin);
         database.addUser(user);
     
     }    
