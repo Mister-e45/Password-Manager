@@ -2,20 +2,19 @@ import java.io.*;
 import java.util.*;
 
 public class DataBase {
-    private ArrayList<User> users;  // Liste des utilisateurs
-    private Map<String, Map<Integer, String>> userPasswords;  // Stockage des mots de passe pour chaque utilisateur
-
+    private Map<String, User> users;  // Liste des utilisateurs
+    private Map<String, Map<String, String[]>> userPasswords;  // Stockage des mots de passe pour chaque utilisateur
     private static final String FILE_NAME = "password_manager_data.txt";  // Fichier persistant
 
-    public DataBase() {
-        this.users = new ArrayList<>();
-        this.userPasswords = new HashMap<>();
-        loadUsers();  // Charger les utilisateurs depuis le fichier au démarrage
+    public DataBase(String filename) {
+        users = new HashMap<String,User>();
+        userPasswords = new HashMap<String,Map<String,String[]>>();
+        load(filename);  // Charger les utilisateurs depuis le fichier au démarrage
     }
 
     // Charger les utilisateurs depuis le fichier
-    private void loadUsers() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(FILE_NAME))) {
+    public void load(String filename) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
             boolean isServiceSection = false;
     
@@ -26,28 +25,32 @@ public class DataBase {
                     isServiceSection = true;
                     continue;
                 }
-    
+
                 if (!isServiceSection) {
                     // Process user data
-                    String[] data = line.split(";");
-                    if (data.length == 4) {
+                    String[] data = line.split(" ; ");
+                    if (data.length == 3) {
                         String username = data[0];
-                        String masterPassword = data[1];
-                        boolean isActive = Boolean.parseBoolean(data[2]);
-                        int id = Integer.parseInt(data[3]);
-                        User user = new User(id, masterPassword, false, username, isActive);
+                        String masterPasswordHash = data[1];
+                        boolean is_admin=false;
+                        if(data[2].equals("t")){
+                            is_admin=true;
+                        }
+                        User user = new User(username, masterPasswordHash, is_admin);
                         addUser(user);
                     } else {
                         System.err.println("Invalid user data format: " + line);
                     }
                 } else {
                     // Process service passwords
-                    String[] data = line.split(";");
-                    if (data.length == 3) {
+                    String[] data = line.split(" ; ");
+                    if (data.length == 4) {
                         String username = data[0];
-                        int serviceId = Integer.parseInt(data[1]);
-                        String password = data[2];
-                        addPasswordForUser(username, serviceId, password);
+                        String serviceName = data[1];
+                        String infoIdService = data[2];
+                        String hashedPassword = data[3];
+
+                        addUserInfo(username,serviceName,infoIdService,hashedPassword);
                     } else {
                         System.err.println("Invalid service password format: " + line);
                     }
@@ -59,13 +62,18 @@ public class DataBase {
     }
     
     // Sauvegarder tous les utilisateurs et mots de passe dans le fichier
-    public void saveUsers() {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME))) {
+    public void save(String filename) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
             // Save user data
             writer.write("# User Data");
             writer.newLine();
-            for (User user : users) {
-                writer.write(user.username + ";" + user.getPassword() + ";" + user.id);
+            for (User user : users.values()) {
+                if(user.isAdmin()){
+                    writer.write(user.getUsername() + " ; " + user.getPasswordHash()+" ; "+"t");
+                }
+                else{
+                    writer.write(user.getUsername() + " ; " + user.getPasswordHash()+" ; "+"f");
+                }
                 writer.newLine();
             }
             writer.newLine();
@@ -73,13 +81,10 @@ public class DataBase {
             // Save service passwords
             writer.write("# Service Passwords");
             writer.newLine();
-            for (User user : users) {
-                Map<Integer, String> passwords = userPasswords.get(user.username);
-                if (passwords != null) {
-                    for (Map.Entry<Integer, String> entry : passwords.entrySet()) {
-                        writer.write(user.username + ";" + entry.getKey() + ";" + entry.getValue());
-                        writer.newLine();
-                    }
+            for (Map.Entry<String, Map<String, String[]>> entry : userPasswords.entrySet()) {
+                for(Map.Entry<String,String[]> userloginfos : entry.getValue().entrySet()){
+                    writer.write(entry.getKey()+ " ; "+ userloginfos.getKey()+" ; "+userloginfos.getValue()[0]+" ; "+userloginfos.getValue()[1]);
+                    writer.newLine();
                 }
             }
         } catch (IOException e) {
@@ -88,50 +93,88 @@ public class DataBase {
     }
     
     // Ajouter un utilisateur à la base de données
-    public void addUser(User user) {
-        users.add(user);
-        userPasswords.put(user.username, new HashMap<>());  // Créer un map vide pour les mots de passe
+    public boolean addUser(User user) {
+        if(!users.containsKey(user.getUsername())){
+        users.put(user.getUsername(),user);
+        userPasswords.put(user.username, new HashMap<String,String[]>());  // Créer un map vide pour les mots de passe
+        return true;
+        }
+        return false;
     }
 
-    // Récupérer un utilisateur par ID
-    public User getUserById(int id) {
-        for (User user : users) {
-            if (user.id == id) {
-                return user;
-            }
-        }
-        return null;
+    public void deleteUser(User user){
+        users.remove(user.getUsername());
+        userPasswords.remove(user.getUsername());
     }
+    public void deleteUser(String username){
+        users.remove(username);
+        userPasswords.remove(username);
+    }
+
+
 
     // Récupérer un utilisateur par son nom d'utilisateur
     public User getUserByUsername(String username) {
-        for (User user : users) {
-            if (user.username.equals(username)) {
-                return user;
-            }
-        }
-        return null;
+        return users.get(username);
+    }
+
+    public boolean userExists(String username){
+        return users.containsKey(username);
     }
 
     // Ajouter un mot de passe pour un utilisateur donné
-    public void addPasswordForUser(String username, int serviceId, String password) {
-        Map<Integer, String> passwords = userPasswords.get(username);
-        if (passwords != null) {
-            passwords.put(serviceId, password);
+    public boolean addUserInfo(User user, String service, String logUsername, String cryptedPassword){
+
+        Map<String, String[]> info = userPasswords.get(user.getUsername());
+        if(info.containsKey(service)){
+            return false;
+        }
+        if (cryptedPassword != null) {
+            String[] logPair = {logUsername,cryptedPassword};
+            info.put(service, logPair);
+        }
+        return true;
+    }
+    public void addUserInfo(String username, String service, String logUsername, String cryptedPassword){
+        Map<String, String[]> info = userPasswords.get(username);
+        if (cryptedPassword != null) {
+            String[] logPair = {logUsername,cryptedPassword};
+            info.put(service, logPair);
         }
     }
 
+    public void deleteInfoUserService(User user,String service){
+        Map<String, String[]> info = userPasswords.get(user.getUsername());
+        info.remove(service);
+    }
+
     // Récupérer les mots de passe d'un utilisateur
-    public Map<Integer, String> getPasswordsForUser(String username) {
+    public Map<String, String[]> getUserServicePasswordMap(String username) {
         return userPasswords.get(username);
     }
 
     // Obtenir tous les utilisateurs
-    public ArrayList<User> getAllUsers() {
-        return users;
+    public Collection<User> getUserCollection() {
+        return users.values();
     }
-    // Obtenir tous les mots de passe des services pour tous les utilisateurs
-    public Map<String, Map<Integer, String>> getAllPasswords() {
-        return userPasswords;  // Retourne le map contenant tous les mots de passe des utilisateurs
+
+    public Collection<String> getUserNameCollection(){
+        return userPasswords.keySet();
     }
+
+    public Collection<String> getServiceUserCollection(User user){
+        return userPasswords.get(user.getUsername()).keySet();
+    }
+    public Collection<String> getServiceUserCollection(String username){
+        return userPasswords.get(username).keySet();
+    }
+
+    public String[] getCredentials(String username,String servicename){
+        return userPasswords.get(username).get(servicename);
+    }
+
+    public String getPasswordHash(String username){
+        return users.get(username).getPasswordHash();
+    }
+
 }

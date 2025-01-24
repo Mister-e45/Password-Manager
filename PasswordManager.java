@@ -20,19 +20,17 @@ public class PasswordManager {
     private Map<String, String> userAccounts = new HashMap<>();
     private Map<String, Map<String, Map<String, String>>> userPasswords = new HashMap<>();
     // Map pour stocker les utilisateurs avec leur username comme clé
-    private Map<String, User> users = new HashMap<>();
+    
 
 
     private Vault vault;
-    private DataBase database;
     private LogInfo logInfo;
-    private UserInput inputManager;
 
     public PasswordManager() {
-        this.vault = new Vault();
-        this.database = new DataBase();
-        this.logInfo = new LogInfo();
-        this.inputManager = new UserInput();
+        vault = new Vault(FILE_NAME);
+    
+        logInfo = new LogInfo();
+        
         loadData();  // Charger les données dès le démarrage
     }
 
@@ -65,8 +63,8 @@ public class PasswordManager {
 
     private void createAccount() {
         String username = getStringInput("Entrez un nom d'utilisateur : ");
-        while (username.trim().isEmpty() || users.containsKey(username)) {
-            if (users.containsKey(username)) {
+        while (username.trim().isEmpty() || vault.userExists(username)) {
+            if (vault.userExists(username)) {
                 System.out.println("Ce nom d'utilisateur existe déjà. Veuillez en choisir un autre.");
             } else {
                 System.out.println("Le nom d'utilisateur ne peut pas être vide.");
@@ -95,69 +93,45 @@ public class PasswordManager {
             }
         }
     
-        // Générer un ID unique pour l'utilisateur
-        int userId = users.size() + 1;
-    
         try {
-            // Générer un sel pour le mot de passe
-            byte[] salt = generateSalt();
-            String hashedPassword = hashPassword(masterPassword, salt);
-    
-            // Créer un nouvel utilisateur
-            User newUser = new User(userId, hashedPassword + ":" + Base64.getEncoder().encodeToString(salt), isAdmin, username, true);
-    
-            // Ajouter l'utilisateur à la liste
-            users.put(username, newUser);
-    
+            vault.addUser(username, masterPassword, isAdmin);
+            
             System.out.println("Compte créé avec succès !");
-            System.out.println(newUser.toString()); // Afficher les détails de l'utilisateur (sans mot de passe)
+            System.out.println(vault.getUserByName(username).toString()); // Afficher les détails de l'utilisateur (sans mot de passe)
         } catch (Exception e) {
             System.err.println("Erreur lors de la création du compte : " + e.getMessage());
         }
-        // version avec le vault
-        try {
-            vault.addVaultUser(username, masterPassword);
-            // Générer un sel
-            byte[] salt = generateSalt();
-            String hashedPassword = hashPassword(masterPassword, salt);
-            userAccounts.put(username, hashedPassword + ":" + Base64.getEncoder().encodeToString(salt));
-            System.out.println("Compte créé avec succès !");
-        } catch (Exception e) {
-            System.err.println("Erreur lors de la création du compte : " + e.getMessage());
-        }
-        //fin de version avec le vault
+
     }
     
 
     private void loginAndPerformActions() {
         String username = getStringInput("Entrez votre nom d'utilisateur : ");
-        if (!userAccounts.containsKey(username)) {
+        if (!vault.userExists(username)) {
             System.out.println("Utilisateur introuvable. Veuillez créer un compte d'abord.");
             return;
         }
     
         String masterPassword = getStringInput("Entrez votre mot de passe maître : ");
-        String storedData = userAccounts.get(username);
-        String[] parts = storedData.split(":");
-        String hashedPassword = parts[0];
-        byte[] salt = Base64.getDecoder().decode(parts[1]);
+        //String storedData = userAccounts.get(username);
     
-        try {
-            if (!verifyPassword(masterPassword, hashedPassword, salt)) {
-                System.out.println("Mot de passe maître incorrect.");
-                return;
-            }
-        } catch (Exception e) {
-            System.err.println("Erreur lors de la vérification du mot de passe : " + e.getMessage());
+        boolean success=vault.logUser(username, masterPassword);
+        //String[] parts = storedData.split(":");
+        //String hashedPassword = parts[0];
+        //byte[] salt = Base64.getDecoder().decode(parts[1]);
+    
+        
+        if (!success) {
+            System.out.println("Mot de passe maître incorrect.");
             return;
         }
     
         System.out.println("Connexion réussie !");
-        User loggedInUser = users.get(username);
-        boolean isAdmin = loggedInUser.isAdmin;
+        User loggedInUser = vault.getLoggedUser();
+        
     
         while (true) {
-            if (isAdmin) {
+            if (loggedInUser.isAdmin()) {
                 showAdminMenu(); // Afficher le menu spécifique à l'administrateur
             } else {
                 showUserMenu(); // Afficher le menu classique pour l'utilisateur
@@ -179,13 +153,13 @@ public class PasswordManager {
                     System.out.println("Déconnexion réussie !");
                     return;
                 case 5:
-                    if (isAdmin) {
-                        String userToDeactivate = getStringInput("Entrez le nom d'utilisateur à désactiver : ");
-                        deactivateUser(userToDeactivate);
+                    if (loggedInUser.isAdmin()) {
+                        String userToDelete = getStringInput("Entrez le nom d'utilisateur à supprimer : ");
+                        vault.deleteUser(userToDelete);
                     }
                     break;
                 case 6:
-                    if (isAdmin) {
+                    if (loggedInUser.isAdmin()) {
                         displayLogs(); // Afficher les logs si l'utilisateur est administrateur
                     }
                     break;
@@ -217,27 +191,9 @@ public class PasswordManager {
     
     // Désactiver un utilisateur
     public void deactivateUser(String username) {
-        User user = users.get(username);
-        if (user != null && user.isActive()) {
-            user.isActive = false;
-            System.out.println("L'utilisateur " + username + " a été désactivé.");
-    
-            // Enregistrer l'action dans les logs
-            logInfo.logAction("Utilisateur " + username + " a été désactivé.");
-        } else {
-            System.out.println("Utilisateur introuvable ou déjà désactivé.");
-        }
+        
     }
     
-    // Afficher les utilisateurs actifs
-    public void listActiveUsers() {
-        System.out.println("Utilisateurs actifs :");
-        for (User user : users.values()) {
-            if (user.isActive()) {
-                System.out.println(user.toString());
-            }
-        }
-    }
     
     // Afficher les logs des actions
     public void displayLogs() {
@@ -257,19 +213,10 @@ public class PasswordManager {
         }
     
         try {
-            String encryptedPassword = encrypt(servicePassword, masterPassword);
-    
-            // Initialisation de la liste des services pour l'utilisateur
-            Map<String, Map<String, String>> userServices = userPasswords.computeIfAbsent(username, k -> new HashMap<>());
-    
-            // Vérification des doublons et ajout du service
-            if (userServices.containsKey(serviceName)) {
+            boolean succes= vault.addLoggedUserInfo(serviceName, serviceUsername, servicePassword);
+            if (!succes) {
                 System.err.println("Ce service existe déjà pour cet utilisateur !");
             } else {
-                Map<String, String> credentials = new HashMap<>();
-                credentials.put("username", serviceUsername);
-                credentials.put("password", encryptedPassword);
-                userServices.put(serviceName, credentials);
                 System.out.println("Identifiant pour " + serviceName + " ajouté avec succès !");
             }
         } catch (Exception e) {
@@ -281,21 +228,20 @@ public class PasswordManager {
 
     private void displayServices(String username, String masterPassword) {
         Map<String, Map<String, String>> userServices = userPasswords.get(username);
-        if (userServices == null || userServices.isEmpty()) {
+        Collection<String> serviceCollection=vault.getLoggedUserServiceCollection();
+        if (serviceCollection.isEmpty()) {
             System.out.println("Aucun service enregistré pour cet utilisateur.");
             return;
         }
     
         System.out.println("Services enregistrés pour l'utilisateur : " + username);
-        userServices.forEach((serviceName, credentials) -> {
+        serviceCollection.forEach(serviceName -> {
             try {
-                String serviceUsername = credentials.get("username");
-                String encryptedPassword = credentials.get("password");
-                String decryptedPassword = decrypt(encryptedPassword, masterPassword);
+                String[] credentials = vault.getLoggedUserServiceCredentials(serviceName);
     
                 System.out.println("Service : " + serviceName);
-                System.out.println("  Nom d'utilisateur : " + serviceUsername);
-                System.out.println("  Mot de passe : " + decryptedPassword);
+                System.out.println("  Nom d'utilisateur : " + credentials[0]);
+                System.out.println("  Mot de passe : " + credentials[1]);
             } catch (Exception e) {
                 System.err.println("Erreur lors du déchiffrement pour le service " + serviceName + " : " + e.getMessage());
             }
@@ -307,29 +253,26 @@ public class PasswordManager {
     private void displayServiceCredentials(String username, String masterPassword, String serviceName) {
         // Vérifier si l'utilisateur existe
         Map<String, Map<String, String>> userServices = userPasswords.get(username);
-    
-        if (userServices == null || userServices.isEmpty()) {
+        Collection<String> services = vault.getLoggedUserServiceCollection();
+        if (services.isEmpty()) {
             System.out.println("Aucun service enregistré pour cet utilisateur.");
             return;
         }
     
         // Vérifier si le service existe pour cet utilisateur
-        Map<String, String> credentials = userServices.get(serviceName);
     
-        if (credentials == null) {
+        if (!services.contains(serviceName)) {
             System.out.println("Le service '" + serviceName + "' n'existe pas pour cet utilisateur.");
             return;
         }
     
         // Déchiffrer et afficher les informations du service
         try {
-            String serviceUsername = credentials.get("username");
-            String encryptedPassword = credentials.get("password");
-            String decryptedPassword = decrypt(encryptedPassword, masterPassword);
+            String[] credentials = vault.getLoggedUserServiceCredentials(serviceName);
     
             System.out.println("Informations pour le service : " + serviceName);
-            System.out.println("  Nom d'utilisateur : " + serviceUsername);
-            System.out.println("  Mot de passe : " + decryptedPassword);
+            System.out.println("  Nom d'utilisateur : " + credentials[0]);
+            System.out.println("  Mot de passe : " + credentials[1]);
         } catch (Exception e) {
             System.err.println("Erreur lors du déchiffrement : " + e.getMessage());
         }
@@ -368,114 +311,14 @@ public class PasswordManager {
     }
 
     private void loadData() {
-        File file = new File(FILE_NAME);
-        if (!file.exists()) {
-            System.out.println("Aucun fichier de données trouvé. Un nouveau fichier sera créé lors de la sauvegarde.");
-            return;
-        }
-    
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            boolean isServiceSection = false;
-    
-            while ((line = reader.readLine()) != null) {
-                // Ignorer les lignes de commentaires ou vides
-                if (line.startsWith("#") || line.trim().isEmpty()) continue;
-    
-                if (line.equalsIgnoreCase("# Section des mots de passe des services")) {
-                    isServiceSection = true;
-                    continue;
-                }
-    
-                if (!isServiceSection) {
-                    // Chargement des utilisateurs
-                    String[] data = line.split(";");
-                    if (data.length == 3) {
-                        String username = data[0];
-                        int userId = Integer.parseInt(data[1]);
-                        String password = data[2];
-                        User user = new User(userId, password, false, username, true);
-                        database.addUser(user);
-                    } else {
-                        System.err.println("Ligne utilisateur mal formée : " + line);
-                    }
-                } else {
-                    // Chargement des services
-                    String[] data = line.split(";");
-                    if (data.length == 4) {
-                        String username = data[0];
-                        int serviceId = Integer.parseInt(data[1]);
-                        String encryptedPassword = data[3];
-    
-                        User user = database.getUserByUsername(username);
-                        if (user != null) {
-                            database.addPasswordForUser(username, serviceId, encryptedPassword);
-                        }
-                    } else {
-                        System.err.println("Ligne service mal formée : " + line);
-                    }
-                }
-            }
-        } catch (IOException | NumberFormatException e) {
-            System.err.println("Erreur lors du chargement des données : " + e.getMessage());
-        }
+        vault.load(FILE_NAME);
     }
 
     private void saveData() {
-        vault.save(); // la ligne active 
-        /*try (BufferedWriter writer = new BufferedWriter(new FileWriter(FILE_NAME, false))) {  // false pour écraser le fichier à chaque sauvegarde
-            // Sauvegarde des utilisateurs
-            System.out.println("on est dans la fonction de sauvegarde");
-            writer.write("# Section des utilisateurs");
-            writer.newLine();
-            for (User user : database.getAllUsers()) {
-                System.out.println("on entre dans la boucle des utilisateurs");
-                System.out.println(user.getUsername() + ";" + user.getUserId() + ";" + user.getPassword()); // print dans la console ce qui serait ecrit dans le fichier
-                writer.write(user.getUsername() + ";" + user.getUserId() + ";" + user.getPassword());
-                writer.newLine();
-            }
-            writer.newLine();
-        
-            // Sauvegarde des mots de passe des services
-            writer.write("# Section des mots de passe des services");
-            writer.newLine();
-            for (Map.Entry<String, Map<Integer, String>> entry : database.getAllPasswords().entrySet()) {
-                String username = entry.getKey();
-                for (Map.Entry<Integer, String> passwordEntry : entry.getValue().entrySet()) {
-                    writer.write(username + ";" + passwordEntry.getKey() + ";" + passwordEntry.getValue());
-                    writer.newLine();
-                }
-            }
-            writer.newLine();
-        } catch (IOException e) {
-            System.err.println("Erreur lors de la sauvegarde des données : " + e.getMessage());
-        }*/
+        vault.save(FILE_NAME);
     }
     
 
-    private String encrypt(String data, String password) throws Exception {
-        byte[] keyBytes = Arrays.copyOf(password.getBytes(StandardCharsets.UTF_8), 16); // Clé de 128 bits (16 octets)
-        SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "AES");
-    
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-        byte[] encryptedData = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
-    
-        return Base64.getEncoder().encodeToString(encryptedData);
-    }
-
-    private String decrypt(String encryptedData, String password) throws Exception {
-        byte[] keyBytes = Arrays.copyOf(password.getBytes(StandardCharsets.UTF_8), 16); // Clé de 128 bits (16 octets)
-        SecretKeySpec secretKey = new SecretKeySpec(keyBytes, "AES");
-    
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        cipher.init(Cipher.DECRYPT_MODE, secretKey);
-        byte[] decodedData = Base64.getDecoder().decode(encryptedData);
-    
-        byte[] decryptedBytes = cipher.doFinal(decodedData);
-    
-        return new String(decryptedBytes, StandardCharsets.UTF_8);
-    }
     public static void main(String[] args) {
         PasswordManager pm = new PasswordManager();
         pm.start();

@@ -1,44 +1,161 @@
-import java.util.HashMap;
-import java.util.Set;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.security.spec.KeySpec;
+import java.util.*;
+
 
 public class Vault {
-    private HashMap<Integer, String> passwordStore;
-    private int nextServiceId; // This will ensure unique IDs for each service
     private DataBase database;
+    private User logedUser;
+    SecretKeySpec secretKey;
 
-    public Vault() {
-        this.passwordStore = new HashMap<>();
-        this.nextServiceId = 1; // Start with ID 1
-        database= new DataBase();
+
+    private static final String HASH_ALGORITHM = "PBKDF2WithHmacSHA256";
+    private static final int SALT_LENGTH = 16;
+    private static final int HASH_ITERATIONS = 65536;
+    private static final int KEY_LENGTH = 256;
+
+
+
+    public Vault(String filename) {
+        database= new DataBase(filename);
+        logedUser=null;
+        secretKey=null;
     }
-
-    public void addVaultUser(User user){
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    
+    public boolean logUser(String username, String password){
+        // check is user exists then hash the password and compare with what is in the database
+        byte[] keyBytes = Arrays.copyOf(password.getBytes(StandardCharsets.UTF_8), 16); // Clé de 128 bits (16 octets)
+        secretKey = new SecretKeySpec(keyBytes, "AES");
+     
+        User user=database.getUserByUsername(username);
+        
+        byte[] salt = generateSalt();
+        
+        try{
+            String hashedpassword = hashPassword(password, salt);
+            if (!hashedpassword.equals(database.getPasswordHash(username))){
+                System.out.println("Le mot de passe de '" + username + "' est incorrecte.");
+                return false;
+            }
+        
+            logedUser = user;
+            return true;
+        }catch(Exception e){
+            System.out.println(e.getMessage());
+        }
+        return false;
+        
+    }
+    
+    
+    
+    public void addUser(String username, String password, boolean admin){
+        User user = new User(username, password, admin);
         database.addUser(user);
+    
+    }    
+    
+    public User getUserByName(String username){
+        return database.getUserByUsername(username);
+    }
+    
+    
+    
+     public void deleteUser(String username){
+        User user=database.getUserByUsername(username);
+        database.deleteUser(user);
+     }
+      
+     public void save(String filename){
+        database.save(filename);
+    }    
+    
+    
+    
+    
+    public void load(String filename){
+        database.load(filename);
+    }    
+    
+    public boolean addLoggedUserInfo(String service,String username,String password){
+        try{
+            String cryptedPassword = encrypt(password);
+            return database.addUserInfo(logedUser, service, username, cryptedPassword);
+        }catch(Exception e){
+            System.out.println(e.getMessage());
+        }
+        return false;
+        
     }
 
-    // Stocker un mot de passe pour un service
-    public void storePassword(String encryptedPassword) {
-        int serviceId = nextServiceId++; // Generate a unique service ID
-        passwordStore.put(serviceId, encryptedPassword);
+    public boolean userExists(String username){
+        return database.userExists(username);
     }
 
-    // Récupérer le mot de passe d'un service
-    public String getPassword(int serviceId) {
-        return passwordStore.getOrDefault(serviceId, null);
+    public Collection<String> getLoggedUserServiceCollection(){
+        return database.getServiceUserCollection(logedUser);
     }
 
-    // Supprimer un mot de passe pour un service
-    public void deletePassword(int serviceId) {
-        passwordStore.remove(serviceId);
+    public String[] getLoggedUserServiceCredentials(String servicename){
+        String[] credentials= database.getCredentials(logedUser.getUsername(), servicename);
+        try{
+            String plainPassword= decrypt(credentials[1]);
+            credentials[1]=plainPassword;
+        }catch(Exception e){
+            System.out.println(e.getMessage());
+        }
+        return credentials;
+    }
+    
+    
+    
+    private String encrypt(String data) throws Exception {
+        
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        byte[] encryptedData = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
+    
+        return Base64.getEncoder().encodeToString(encryptedData);
     }
 
-    // Obtenir tous les identifiants de services enregistrés
-    public Set<Integer> getAllServiceIds() {
-        return passwordStore.keySet(); // Retourne l'ensemble des clés (serviceIds)
+    
+    public String decrypt(String encryptedData) throws Exception {
+    
+        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        byte[] decodedData = Base64.getDecoder().decode(encryptedData);
+    
+        byte[] decryptedBytes = cipher.doFinal(decodedData);
+    
+        return new String(decryptedBytes, StandardCharsets.UTF_8);
     }
 
-    // Get the next service ID (for adding a new service)
-    public int getNextServiceId() {
-        return nextServiceId;
+    
+    private String hashPassword(String password, byte[] salt) throws Exception {
+        KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, HASH_ITERATIONS, KEY_LENGTH);
+        SecretKeyFactory factory = SecretKeyFactory.getInstance(HASH_ALGORITHM);
+        byte[] hash = factory.generateSecret(spec).getEncoded();
+        return Base64.getEncoder().encodeToString(hash);
     }
+    
+    
+    private byte[] generateSalt() {
+        byte[] salt = new byte[SALT_LENGTH];
+        new SecureRandom().nextBytes(salt);
+        return salt;
+    }
+
+    
+    ////////////////////////////////////////////////////////////////////////////////////////////
+    
 }
