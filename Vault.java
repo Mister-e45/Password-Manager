@@ -38,11 +38,15 @@ public class Vault {
         secretKey = new SecretKeySpec(keyBytes, "AES");
      
         User user=database.getUserByUsername(username);
+        if(user==null){
+            return false;
+        }
         
         byte[] salt = Base64.getDecoder().decode( user.getPasswordSalt() );
         
         try{
             String hashedpassword = hashPassword(password, salt);
+            System.out.println("hashed password at login: "+hashedpassword);
             if (!hashedpassword.equals(database.getPasswordHash(username))){
                 System.out.println("Le mot de passe de '" + username + "' est incorrect.");
                 return false;
@@ -65,10 +69,11 @@ public class Vault {
         String hashedPassword = null ;
         try{
         hashedPassword = hashPassword(password, salt);
+        System.out.println("hashed password at creation: "+hashedPassword);
         }catch(Exception e){
             System.out.println(e.getMessage());
         }
-        User user = new User(username, password,string_salt, admin);
+        User user = new User(username, hashedPassword,string_salt, admin);
         database.addUser(user);
     
     }    
