@@ -174,8 +174,7 @@ public class Vault {
 
    
 
-    public static String generatePassword() {
-        int length=16;
+    public String generatePassword(int length) {
         String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
         SecureRandom random = new SecureRandom();
         StringBuilder password = new StringBuilder(length);
