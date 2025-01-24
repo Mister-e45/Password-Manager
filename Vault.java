@@ -116,6 +116,10 @@ public class Vault {
         }
         return credentials;
     }
+
+    public User getLoggedUser(){
+        return logedUser;
+    }
     
     
     
