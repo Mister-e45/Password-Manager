@@ -42,15 +42,15 @@ public class PasswordManager {
             System.out.println("2. Se connecter");
             System.out.println("3. Quitter");
     
-            int choice = getIntInput("Votre choix : ");
+            String choice = getStringInput("Votre choix : ");
             switch (choice) {
-                case 1:
+                case "1":
                     createAccount();
                     break;
-                case 2:
+                case "2":
                     loginAndPerformActions();
                     break;
-                case 3:
+                case "3":
                     saveData();
                     System.out.println("Au revoir !");
                     return;
@@ -73,13 +73,19 @@ public class PasswordManager {
         
         String masterPassword;
 
+        masterPassword = getStringInput("Entrez un mot de passe maître (min. 16 caractères) : ");    
+        while (masterPassword.length() < 16){
+           
+          
+            System.out.println("Le mot de passe maître doit contenir au moins 16 caractères. Veuillez reéssayer ou quitter (Q)");
+            masterPassword = getStringInput("Entrez un mot de passe maître (min. 16 caractères) :");
 
-        do {
+            if (masterPassword.equals("Q")){
+                return;
+            } 
+
             masterPassword = getStringInput("Entrez un mot de passe maître (min. 16 caractères) : ");
-            if (masterPassword.length() < 16) {
-                System.out.println("Le mot de passe maître doit contenir au moins 16 caractères.");
-            }
-        } while (masterPassword.length() < 16);
+        } 
         
         // Détection du rôle utilisateur/administrateur
         boolean isAdmin = false;
