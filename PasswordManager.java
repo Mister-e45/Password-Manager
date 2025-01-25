@@ -16,7 +16,7 @@ public class PasswordManager {
     private static final int SALT_LENGTH = 16;
     private static final int HASH_ITERATIONS = 65536;
     private static final int KEY_LENGTH = 256;
-
+    private String prompt;
     private Map<String, String> userAccounts = new HashMap<>();
     private Map<String, Map<String, Map<String, String>>> userPasswords = new HashMap<>();
     // Map pour stocker les utilisateurs avec leur username comme clé
@@ -25,11 +25,11 @@ public class PasswordManager {
 
     private Vault vault;
     private LogInfo logInfo;
-    private Vault userinput;
-
-    public PasswordManager() {
-        vault = new Vault(FILE_NAME);
+    private UserInput userinput;
     
+    public PasswordManager(){
+        vault = new Vault(FILE_NAME);
+        userinput = new UserInput();
         logInfo = new LogInfo();
         
     }
@@ -43,7 +43,7 @@ public class PasswordManager {
             System.out.println("2. Se connecter");
             System.out.println("3. Quitter");
     
-            String choice = getStringInput("Votre choix : ");
+            String choice = userinput.getStringInput("Votre choix : ");
             switch (choice) {
                 case "1":
                     createAccount();
@@ -62,38 +62,38 @@ public class PasswordManager {
     }
 
     private void createAccount() {
-        String username = getStringInput("Entrez un nom d'utilisateur : ");
+        String username = userinput.getStringInput("Entrez un nom d'utilisateur : ");
         while (username.trim().isEmpty() || vault.userExists(username)) {
             if (vault.userExists(username)) {
                 System.out.println("Ce nom d'utilisateur existe déjà. Veuillez en choisir un autre.");
             } else {
                 System.out.println("Le nom d'utilisateur ne peut pas être vide.");
             }
-            username = getStringInput("Entrez un nom d'utilisateur : ");
+            username = userinput.getStringInput("Entrez un nom d'utilisateur : ");
         }
         
         String masterPassword;
 
-        masterPassword = getStringInput("Entrez un mot de passe maître (min. 16 caractères) : ");    
+        masterPassword = userinput.getStringInput("Entrez un mot de passe maître (min. 16 caractères) : ");    
         while (masterPassword.length() < 16){
            
           
             System.out.println("Le mot de passe maître doit contenir au moins 16 caractères. Veuillez reéssayer ou quitter (Q)");
-            masterPassword = getStringInput("Entrez un mot de passe maître (min. 16 caractères) :");
+            masterPassword = userinput.getStringInput("Entrez un mot de passe maître (min. 16 caractères) :");
 
             if (masterPassword.equals("Q")){
                 return;
             } 
 
-            masterPassword = getStringInput("Entrez un mot de passe maître (min. 16 caractères) : ");
+            masterPassword = userinput.getStringInput("Entrez un mot de passe maître (min. 16 caractères) : ");
         } 
         
         // Détection du rôle utilisateur/administrateur
         boolean isAdmin = false;
-        String roleChoice = getStringInput("Voulez-vous créer un compte administrateur ? (oui/non) : ").trim().toLowerCase();
+        String roleChoice = userinput.getStringInput("Voulez-vous créer un compte administrateur ? (oui/non) : ").trim().toLowerCase();
     
         if (roleChoice.equals("oui")) {
-            String adminCode = getStringInput("Entrez le code secret pour administrateur : ");
+            String adminCode = userinput.getStringInput("Entrez le code secret pour administrateur : ");
             if (!adminCode.equals("groupe hp")) {
                 System.out.println("Code secret invalide. Création d'un compte utilisateur classique.");
             } else {
@@ -114,13 +114,13 @@ public class PasswordManager {
     
 
     private void loginAndPerformActions() {
-        String username = getStringInput("Entrez votre nom d'utilisateur : ");
+        String username = userinput.getStringInput("Entrez votre nom d'utilisateur : ");
         if (!vault.userExists(username)) {
             System.out.println("Utilisateur introuvable. Veuillez créer un compte d'abord.");
             return;
         }
     
-        String masterPassword = getStringInput("Entrez votre mot de passe maître : ");
+        String masterPassword = userinput.getStringInput("Entrez votre mot de passe maître : ");
         //String storedData = userAccounts.get(username);
     
         boolean success=vault.logUser(username, masterPassword);
@@ -145,7 +145,7 @@ public class PasswordManager {
                 showUserMenu(); // Afficher le menu classique pour l'utilisateur
             }
     
-            String choice = getStringInput("Votre choix : ");
+            String choice = userinput.getStringInput("Votre choix : ");
             switch (choice) {
                 case "1":
                     addService(username);
@@ -154,7 +154,7 @@ public class PasswordManager {
                     displayServices(username, masterPassword);
                     break;
                 case "3":
-                    String serviceName = getStringInput("Entrez le nom du service à afficher : ").trim();
+                    String serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
                     displayServiceCredentials(username, masterPassword, serviceName);
                     break;
                 case "4":
@@ -162,7 +162,7 @@ public class PasswordManager {
                     return;
                 case "5":
                     if (loggedInUser.isAdmin()) {
-                        String userToDelete = getStringInput("Entrez le nom d'utilisateur à supprimer : ");
+                        String userToDelete = userinput.getStringInput("Entrez le nom d'utilisateur à supprimer : ");
                         vault.deleteUser(userToDelete);
                     }
                     break;
@@ -211,16 +211,16 @@ public class PasswordManager {
 
 
     private void addService(String username) {
-        String serviceName = getStringInput("Nom du service (par ex. Netflix, Amazon) : ").trim();
-        String serviceUsername = getStringInput("Nom d'utilisateur pour " + serviceName + " : ").trim();
-        String choix = getStringInput("Générer ou saisir un mot de passe (G/S): ");
+        String serviceName = userinput.getStringInput("Nom du service (par ex. Netflix, Amazon) : ").trim();
+        String serviceUsername = userinput.getStringInput("Nom d'utilisateur pour " + serviceName + " : ").trim();
+        String choix = userinput.getStringInput("Générer ou saisir un mot de passe (G/S): ");
         String servicePassword;
 
         if (choix.equals("S")){
-            servicePassword = getStringInput("Mot de passe pour " + serviceName + " : ").trim();
+            servicePassword = userinput.getStringInput("Mot de passe pour " + serviceName + " : ").trim();
 
         }else{
-            int length = Integer.valueOf(getStringInput("Longueur du mot de passe: ").trim());
+            int length = Integer.valueOf(userinput.getStringInput("Longueur du mot de passe: ").trim());
             servicePassword = vault.generatePassword(length);
         }
 
@@ -303,19 +303,6 @@ public class PasswordManager {
         SecretKeyFactory factory = SecretKeyFactory.getInstance(HASH_ALGORITHM);
         byte[] hash = factory.generateSecret(spec).getEncoded();
         return Base64.getEncoder().encodeToString(hash);
-    }
-
-
-    private String getStringInput(String prompt) {
-        System.out.print(prompt);
-        Scanner scanner = new Scanner(System.in);
-        return scanner.nextLine();
-    }
-
-    private int getIntInput(String prompt) {
-        System.out.print(prompt);
-        Scanner scanner = new Scanner(System.in);
-        return scanner.nextInt();
     }
 
     private void loadData() {
