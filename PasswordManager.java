@@ -25,6 +25,7 @@ public class PasswordManager {
 
     private Vault vault;
     private LogInfo logInfo;
+    private Vault userinput;
 
     public PasswordManager() {
         vault = new Vault(FILE_NAME);
@@ -144,28 +145,28 @@ public class PasswordManager {
                 showUserMenu(); // Afficher le menu classique pour l'utilisateur
             }
     
-            int choice = getIntInput("Votre choix : ");
+            String choice = getStringInput("Votre choix : ");
             switch (choice) {
-                case 1:
+                case "1":
                     addService(username);
                     break;
-                case 2:
+                case "2":
                     displayServices(username, masterPassword);
                     break;
-                case 3:
+                case "3":
                     String serviceName = getStringInput("Entrez le nom du service à afficher : ").trim();
                     displayServiceCredentials(username, masterPassword, serviceName);
                     break;
-                case 4:
+                case "4":
                     System.out.println("Déconnexion réussie !");
                     return;
-                case 5:
+                case "5":
                     if (loggedInUser.isAdmin()) {
                         String userToDelete = getStringInput("Entrez le nom d'utilisateur à supprimer : ");
                         vault.deleteUser(userToDelete);
                     }
                     break;
-                case 6:
+                case "6":
                     if (loggedInUser.isAdmin()) {
                         displayLogs(); // Afficher les logs si l'utilisateur est administrateur
                     }
