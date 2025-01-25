@@ -19,12 +19,13 @@ public class DataBase {
             boolean isServiceSection = false;
     
             while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty() || line.startsWith("#")) continue;
     
                 if (line.equalsIgnoreCase("# Service Passwords")) {
                     isServiceSection = true;
                     continue;
                 }
+
+                if (line.trim().isEmpty() || line.startsWith("#")) continue;
 
                 if (!isServiceSection) {
                     // Process user data
@@ -50,7 +51,6 @@ public class DataBase {
                         String serviceName = data[1];
                         String infoIdService = data[2];
                         String encryptedPassword = data[3];
-
                         addUserInfo(username,serviceName,infoIdService,encryptedPassword);
                     } else {
                         System.err.println("Invalid service password format: " + line);

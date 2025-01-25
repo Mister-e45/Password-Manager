@@ -31,7 +31,6 @@ public class PasswordManager {
     
         logInfo = new LogInfo();
         
-        loadData();  // Charger les données dès le démarrage
     }
 
     public void start() {
