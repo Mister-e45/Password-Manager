@@ -46,7 +46,6 @@ public class Vault {
         
         try{
             String hashedpassword = hashPassword(password, salt);
-            System.out.println("hashed password at login: "+hashedpassword);
             if (!hashedpassword.equals(database.getPasswordHash(username))){
                 System.out.println("Le mot de passe de '" + username + "' est incorrect.");
                 return false;
@@ -69,7 +68,6 @@ public class Vault {
         String hashedPassword = null ;
         try{
         hashedPassword = hashPassword(password, salt);
-        System.out.println("hashed password at creation: "+hashedPassword);
         }catch(Exception e){
             System.out.println(e.getMessage());
         }
