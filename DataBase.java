@@ -124,14 +124,13 @@ public class DataBase {
     }
 
     // Ajouter un mot de passe pour un utilisateur donné
-    public boolean addUserInfo(User user, String service, String logUsername, String cryptedPassword){
-
+    public boolean addUserInfo(User user, String service, String logUsername, String encryptedPassword){
         Map<String, String[]> info = userPasswords.get(user.getUsername());
         if(info.containsKey(service)){
             return false;
         }
-        if (cryptedPassword != null) {
-            String[] logPair = {logUsername,cryptedPassword};
+        if (encryptedPassword != null) {
+            String[] logPair = {logUsername,encryptedPassword};
             info.put(service, logPair);
         }
         return true;
@@ -142,6 +141,7 @@ public class DataBase {
             String[] logPair = {logUsername,encryptedPassword};
             info.put(service, logPair);
         }
+        userPasswords.put(username, info);
     }
 
     public void deleteInfoUserService(User user,String service){

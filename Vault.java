@@ -100,8 +100,9 @@ public class Vault {
     
     public boolean addLoggedUserInfo(String service,String username,String password){
         try{
-            String cryptedPassword = encrypt(password);
-            return database.addUserInfo(logedUser, service, username, cryptedPassword);
+            String encryptedUsername=encrypt(username);
+            String encryptedPassword = encrypt(password);
+            return database.addUserInfo(logedUser, service, encryptedUsername, encryptedPassword);
         }catch(Exception e){
             System.out.println(e.getMessage());
         }
@@ -119,13 +120,17 @@ public class Vault {
 
     public String[] getLoggedUserServiceCredentials(String servicename){
         String[] credentials= database.getCredentials(logedUser.getUsername(), servicename);
+        String plainPassword=null;
+        String plainUsername=null;
         try{
-            String plainPassword= decrypt(credentials[1]);
-            credentials[1]=plainPassword;
+            plainPassword= decrypt(credentials[1]);
+            plainUsername= decrypt(credentials[0]);
+
         }catch(Exception e){
             System.out.println(e.getMessage());
         }
-        return credentials;
+        String[] output = {plainUsername,plainPassword};
+        return output;
     }
 
     public User getLoggedUser(){
@@ -136,9 +141,9 @@ public class Vault {
     
     private String encrypt(String data) throws Exception {
         
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-        byte[] encryptedData = cipher.doFinal(data.getBytes(StandardCharsets.UTF_8));
+        byte[] encryptedData = cipher.doFinal(pad(data,16).getBytes(StandardCharsets.UTF_8));
     
         return Base64.getEncoder().encodeToString(encryptedData);
     }
@@ -146,15 +151,39 @@ public class Vault {
     
     public String decrypt(String encryptedData) throws Exception {
     
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+        Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
         cipher.init(Cipher.DECRYPT_MODE, secretKey);
         byte[] decodedData = Base64.getDecoder().decode(encryptedData);
     
         byte[] decryptedBytes = cipher.doFinal(decodedData);
     
-        return new String(decryptedBytes, StandardCharsets.UTF_8);
+        return unpad(new String(decryptedBytes, StandardCharsets.UTF_8));
     }
 
+    private String pad(String input,int multipleOf){ 
+        int length=input.getBytes(StandardCharsets.UTF_8).length;
+
+        int remainder=length%multipleOf;
+        int padlength=0;
+        if(remainder!=0){
+            padlength=16-remainder;
+        }
+        
+        StringBuilder res = new StringBuilder(input);
+        for(int i=0; i< padlength; i++){
+            res.append('\0');
+        }
+
+        return res.toString();
+    }
+
+    private String unpad(String input){ //l'utilisateur ne rentre que des caractère imprimable on peut donc retirer les zeros sans craindre qu'ils n'étaient dans le message
+        StringBuilder res= new StringBuilder(input);
+        while(res.charAt(res.length()-1)=='\0'){
+            res.deleteCharAt(res.length()-1);
+        }
+        return res.toString();
+    }
     
     private String hashPassword(String password, byte[] salt) throws Exception {
         KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, HASH_ITERATIONS, KEY_LENGTH);
@@ -173,7 +202,7 @@ public class Vault {
    
 
     public String generatePassword(int length) {
-        String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+        String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?@#$%^&*()_+-,:";
         SecureRandom random = new SecureRandom();
         StringBuilder password = new StringBuilder(length);
 
