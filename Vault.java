@@ -100,9 +100,9 @@ public class Vault {
     
     public boolean addLoggedUserInfo(String service,String username,String password){
         try{
-
+            String encryptedUsername=encrypt(username);
             String encryptedPassword = encrypt(password);
-            return database.addUserInfo(logedUser, service, username, encryptedPassword);
+            return database.addUserInfo(logedUser, service, encryptedUsername, encryptedPassword);
         }catch(Exception e){
             System.out.println(e.getMessage());
         }
@@ -121,13 +121,15 @@ public class Vault {
     public String[] getLoggedUserServiceCredentials(String servicename){
         String[] credentials= database.getCredentials(logedUser.getUsername(), servicename);
         String plainPassword=null;
+        String plainUsername=null;
         try{
             plainPassword= decrypt(credentials[1]);
+            plainUsername= decrypt(credentials[0]);
 
         }catch(Exception e){
             System.out.println(e.getMessage());
         }
-        String[] output = {credentials[0],plainPassword};
+        String[] output = {plainUsername,plainPassword};
         return output;
     }
 
@@ -200,7 +202,7 @@ public class Vault {
    
 
     public String generatePassword(int length) {
-        String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+        String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?@#$%^&*()_+-,:";
         SecureRandom random = new SecureRandom();
         StringBuilder password = new StringBuilder(length);
 
