@@ -226,7 +226,7 @@ public class PasswordManager {
         try {
             boolean succes= vault.addLoggedUserInfo(serviceName, serviceUsername, servicePassword);
             if (!succes) {
-                System.err.println("Ce service existe déjà pour cet utilisateur !");
+                System.err.println("Service non ajouté, peut être que ce service existe déjà pour cet utilisateur");
             } else {
                 System.out.println("Identifiant pour " + serviceName + " ajouté avec succès !");
             }
@@ -298,16 +298,6 @@ public class PasswordManager {
         return Base64.getEncoder().encodeToString(hash);
     }
 
-    private boolean verifyPassword(String password, String hashedPassword, byte[] salt) throws Exception {
-        String computedHash = hashPassword(password, salt);
-        return computedHash.equals(hashedPassword);
-    }
-
-    private byte[] generateSalt() {
-        byte[] salt = new byte[SALT_LENGTH];
-        new SecureRandom().nextBytes(salt);
-        return salt;
-    }
 
     private String getStringInput(String prompt) {
         System.out.print(prompt);
