@@ -141,7 +141,7 @@ public class PasswordManager {
             int choice = getIntInput("Votre choix : ");
             switch (choice) {
                 case 1:
-                    addService(username, masterPassword);
+                    addService(username);
                     break;
                 case 2:
                     displayServices(username, masterPassword);
@@ -203,11 +203,21 @@ public class PasswordManager {
     
 
 
-    private void addService(String username, String masterPassword) {
+    private void addService(String username) {
         String serviceName = getStringInput("Nom du service (par ex. Netflix, Amazon) : ").trim();
         String serviceUsername = getStringInput("Nom d'utilisateur pour " + serviceName + " : ").trim();
-        String servicePassword = getStringInput("Mot de passe pour " + serviceName + " : ").trim();
-    
+        String choix = getStringInput("Générer ou saisir un mot de passe (G/S): ");
+        String servicePassword;
+
+        if (choix.equals("S")){
+            servicePassword = getStringInput("Mot de passe pour " + serviceName + " : ").trim();
+
+        }else{
+            int length = Integer.valueOf(getStringInput("Longueur du mot de passe: ").trim());
+            servicePassword = vault.generatePassword(length);
+        }
+
+        
         if (serviceName.isEmpty() || serviceUsername.isEmpty() || servicePassword.isEmpty()) {
             System.err.println("Tous les champs doivent être remplis !");
             return;
