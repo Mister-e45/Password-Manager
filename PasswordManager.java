@@ -189,7 +189,7 @@ public class PasswordManager {
     // Afficher le menu pour les administrateurs
     private void showAdminMenu() {
         System.out.println("\nActions disponibles :");
-        System.out.println("1. Ajouter un identifiant pour un service");
+        System.out.println("1. Ajouter une information de connexion pour un service");
         System.out.println("2. Afficher les identifiants et mots de passe de tout les services");
         System.out.println("3. Afficher l'identifiant et le mot de passe d'un service en particulier");
         System.out.println("4. Se déconnecter");
