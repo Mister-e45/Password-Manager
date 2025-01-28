@@ -80,11 +80,13 @@ public class Vault {
         return database.getUserByUsername(username);
     }
     
-    
-    
      public void deleteUser(String username){
         User user=database.getUserByUsername(username);
         database.deleteUser(user);
+     }
+
+     public void deleteLoggedUserService(String serviceName){
+        database.deleteServiceCredentials(logedUser.getUsername(),serviceName);
      }
       
      public void save(String filename){
