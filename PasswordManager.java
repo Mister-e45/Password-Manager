@@ -146,6 +146,7 @@ public class PasswordManager {
             }
     
             String choice = userinput.getStringInput("Votre choix : ");
+            String serviceName=null;
             switch (choice) {
                 case "1":
                     addService(username);
@@ -154,12 +155,12 @@ public class PasswordManager {
                     displayServices(username, masterPassword);
                     break;
                 case "3":
-                    String serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
+                    serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
                     displayServiceCredentials(username, masterPassword, serviceName);
                     break;
                 
                 case "4":
-                    String serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
+                    serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
                     vault.deleteLoggedUserService(serviceName);
                 return;
 
