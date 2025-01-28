@@ -4,7 +4,6 @@ import java.util.*;
 public class DataBase {
     private Map<String, User> users;  // Liste des utilisateurs
     private Map<String, Map<String, String[]>> userPasswords;  // Stockage des mots de passe pour chaque utilisateur 
-    private static final String FILE_NAME = "password_manager_data.txt";  // Fichier persistant
 
     public DataBase(String filename) {
         users = new HashMap<String,User>();
@@ -154,10 +153,7 @@ public class DataBase {
         info.remove(service);
     }
 
-    // Récupérer les mots de passe d'un utilisateur
-    public Map<String, String[]> getUserServicePasswordMap(String username) {
-        return userPasswords.get(username);
-    }
+
 
     // Obtenir tous les utilisateurs
     public Collection<User> getUserCollection() {

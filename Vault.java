@@ -139,6 +139,11 @@ public class Vault {
         return logedUser;
     }
     
+    public Collection<String> getAllUserNames(){
+        return database.getUserNameCollection();
+    }
+
+    
     
     
     private String encrypt(String data) throws Exception {
