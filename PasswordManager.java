@@ -319,17 +319,6 @@ public class PasswordManager {
     
 
     
-    private String hashPassword(String password, byte[] salt) throws Exception {
-        KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, HASH_ITERATIONS, KEY_LENGTH);
-        SecretKeyFactory factory = SecretKeyFactory.getInstance(HASH_ALGORITHM);
-        byte[] hash = factory.generateSecret(spec).getEncoded();
-        return Base64.getEncoder().encodeToString(hash);
-    }
-
-    private void loadData() {
-        vault.load(FILE_NAME);
-    }
-
     private void saveData() {
         vault.save(FILE_NAME);
     }
