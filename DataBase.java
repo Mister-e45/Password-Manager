@@ -167,9 +167,6 @@ public class DataBase {
     public Collection<String> getServiceUserCollection(User user){
         return userPasswords.get(user.getUsername()).keySet();
     }
-    public Collection<String> getServiceUserCollection(String username){
-        return userPasswords.get(username).keySet();
-    }
 
     public String[] getCredentials(String username,String servicename){
         return userPasswords.get(username).get(servicename);
