@@ -3,7 +3,7 @@ import java.util.*;
 
 public class DataBase {
     private Map<String, User> users;  // Liste des utilisateurs
-    private Map<String, Map<String, String[]>> userPasswords;  // Stockage des mots de passe pour chaque utilisateur
+    private Map<String, Map<String, String[]>> userPasswords;  // Stockage des mots de passe pour chaque utilisateur 
     private static final String FILE_NAME = "password_manager_data.txt";  // Fichier persistant
 
     public DataBase(String filename) {
@@ -110,6 +110,11 @@ public class DataBase {
     public void deleteUser(String username){
         users.remove(username);
         userPasswords.remove(username);
+    }
+    public void deleteServiceCredentials(String userName,String servicename){
+        Map<String, String[]> m= userPasswords.get(userName);
+        m.remove(servicename);
+        userPasswords.put(userName,m);
     }
 
 
