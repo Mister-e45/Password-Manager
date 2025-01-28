@@ -1,25 +1,8 @@
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.security.spec.KeySpec;
 import java.util.*;
 
 public class PasswordManager {
 
     private static final String FILE_NAME = "password_manager_data.txt";
-    private static final String HASH_ALGORITHM = "PBKDF2WithHmacSHA256";
-    private static final int SALT_LENGTH = 16;
-    private static final int HASH_ITERATIONS = 65536;
-    private static final int KEY_LENGTH = 256;
-    private String prompt;
-    private Map<String, String> userAccounts = new HashMap<>();
-    private Map<String, Map<String, Map<String, String>>> userPasswords = new HashMap<>();
-    // Map pour stocker les utilisateurs avec leur username comme clé
     
 
 
@@ -266,7 +249,6 @@ public class PasswordManager {
     
 
     private void displayServices(String username, String masterPassword) {
-        Map<String, Map<String, String>> userServices = userPasswords.get(username);
         Collection<String> serviceCollection=vault.getLoggedUserServiceCollection();
         if (serviceCollection.isEmpty()) {
             System.out.println("Aucun service enregistré pour cet utilisateur.");
@@ -291,7 +273,7 @@ public class PasswordManager {
 
     private void displayServiceCredentials(String username, String masterPassword, String serviceName) {
         // Vérifier si l'utilisateur existe
-        Map<String, Map<String, String>> userServices = userPasswords.get(username);
+        
         Collection<String> services = vault.getLoggedUserServiceCollection();
         if (services.isEmpty()) {
             System.out.println("Aucun service enregistré pour cet utilisateur.");
