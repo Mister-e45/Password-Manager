@@ -157,16 +157,21 @@ public class PasswordManager {
                     String serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
                     displayServiceCredentials(username, masterPassword, serviceName);
                     break;
+                
                 case "4":
+                    vault.deleteLoggedUserService(serviceName);
+                return;
+
+                case "5":
                     System.out.println("Déconnexion réussie !");
                     return;
-                case "5":
+                case "6":
                     if (loggedInUser.isAdmin()) {
                         String userToDelete = userinput.getStringInput("Entrez le nom d'utilisateur à supprimer : ");
                         vault.deleteUser(userToDelete);
                     }
                     break;
-                case "6":
+                case "7":
                     if (loggedInUser.isAdmin()) {
                         displayLogs(); // Afficher les logs si l'utilisateur est administrateur
                     }
