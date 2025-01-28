@@ -159,6 +159,7 @@ public class PasswordManager {
                     break;
                 
                 case "4":
+                    String serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
                     vault.deleteLoggedUserService(serviceName);
                 return;
 
