@@ -64,8 +64,12 @@ public class PasswordManager {
     private void createAccount() {
         String username = userinput.getStringInput("Entrez un nom d'utilisateur : ");
         while (username.trim().isEmpty() || vault.userExists(username)) {
+            if (username.equals("R")){
+                return;
+            } 
             if (vault.userExists(username)) {
-                System.out.println("Ce nom d'utilisateur existe déjà. Veuillez en choisir un autre.");
+                System.out.println("Ce nom d'utilisateur existe déjà. Veuillez en choisir un autre ou retouner (R).");
+
             } else {
                 System.out.println("Le nom d'utilisateur ne peut pas être vide.");
             }
@@ -154,6 +158,7 @@ public class PasswordManager {
                 case "2":
                     displayServices(username, masterPassword);
                     break;
+
                 case "3":
                     serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
                     displayServiceCredentials(username, masterPassword, serviceName);
@@ -162,22 +167,27 @@ public class PasswordManager {
                 case "4":
                     serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
                     vault.deleteLoggedUserService(serviceName);
-                return;
+                    break;
 
                 case "5":
-                    System.out.println("Déconnexion réussie !");
-                    return;
-                case "6":
                     if (loggedInUser.isAdmin()) {
                         String userToDelete = userinput.getStringInput("Entrez le nom d'utilisateur à supprimer : ");
                         vault.deleteUser(userToDelete);
                     }
                     break;
-                case "7":
+                case "6":
                     if (loggedInUser.isAdmin()) {
-                        displayLogs(); // Afficher les logs si l'utilisateur est administrateur
+                        Collection<String> UserList = vault.getAllUserNames(); // Afficher tout les utilisateurs 
+                        for(String u: UserList) { 
+                            System.err.println(u);
+                        }
                     }
-                    break;
+                    break; 
+                   
+                case "q":
+                    System.out.println("Déconnexion réussie !");
+                    return; 
+                    
                 default:
                     System.out.println("Choix invalide. Veuillez réessayer.");
             }
@@ -187,10 +197,11 @@ public class PasswordManager {
     // Afficher le menu pour les utilisateurs classiques
     private void showUserMenu() {
         System.out.println("\nActions disponibles :");
-        System.out.println("1. Ajouter un identifiant pour un service");
+        System.out.println("1. Ajouter une information de connexion pour un service");
         System.out.println("2. Afficher les identifiants et mots de passe de tout les services");
         System.out.println("3. Afficher l'identifiant et le mot de passe d'un service en particulier");
-        System.out.println("4. Se déconnecter");
+        System.out.println("4. Supprimer un service en particulier");
+        System.out.println("q. Se déconnecter");
     }
     
     // Afficher le menu pour les administrateurs
@@ -199,9 +210,12 @@ public class PasswordManager {
         System.out.println("1. Ajouter une information de connexion pour un service");
         System.out.println("2. Afficher les identifiants et mots de passe de tout les services");
         System.out.println("3. Afficher l'identifiant et le mot de passe d'un service en particulier");
-        System.out.println("4. Se déconnecter");
-        System.out.println("5. Désactiver un utilisateur");
-        System.out.println("6. Afficher les logs des actions");
+        System.out.println("4. Supprimer un service en particulier"); 
+        System.out.println("5. Supprimer un utilisateur");
+        System.out.println("6. Afficher tout les utilisateurs");
+        System.out.println("q. Se déconnecter");
+        
+        
     }
     
     // Désactiver un utilisateur
