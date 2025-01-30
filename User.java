@@ -32,12 +32,7 @@ public class User {
         salt=newPasswordSalt;
     }
     
-/* 
-    // Méthode pour récupérer l'identifiant de l'utilisateur
-    public int getUserId() {
-        return id;
-    }
-*/
+
     // Méthode pour récupérer le nom d'utilisateur
     public String getUsername() {
         return username;
