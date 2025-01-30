@@ -144,7 +144,7 @@ public class PasswordManager {
 
                 case "3":
                     serviceName = userinput.getStringInput("Entrez le nom du service à afficher : ").trim();
-                    displayServiceCredentials(username, masterPassword, serviceName);
+                    displayServiceCredentials(username, serviceName);
                     break;
                 
                 case "4":
@@ -271,7 +271,7 @@ public class PasswordManager {
     
 
 
-    private void displayServiceCredentials(String username, String masterPassword, String serviceName) {
+    private void displayServiceCredentials(String username, String serviceName) {
         // Vérifier si l'utilisateur existe
         
         Collection<String> services = vault.getLoggedUserServiceCollection();
