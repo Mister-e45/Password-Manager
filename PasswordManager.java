@@ -139,7 +139,7 @@ public class PasswordManager {
                     addService(username);
                     break;
                 case "2":
-                    displayServices(username, masterPassword);
+                    displayServices(username);
                     break;
 
                 case "3":
@@ -248,7 +248,7 @@ public class PasswordManager {
     
     
 
-    private void displayServices(String username, String masterPassword) {
+    private void displayServices(String username) {
         Collection<String> serviceCollection=vault.getLoggedUserServiceCollection();
         if (serviceCollection.isEmpty()) {
             System.out.println("Aucun service enregistré pour cet utilisateur.");
