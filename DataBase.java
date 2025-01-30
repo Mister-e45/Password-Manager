@@ -96,7 +96,7 @@ public class DataBase {
     public boolean addUser(User user) {
         if(!users.containsKey(user.getUsername())){
         users.put(user.getUsername(),user);
-        userPasswords.put(user.username, new HashMap<String,String[]>());  // Créer un map vide pour les mots de passe
+        userPasswords.put(user.getUsername(), new HashMap<String,String[]>());  // Créer un map vide pour les mots de passe
         return true;
         }
         return false;

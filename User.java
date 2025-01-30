@@ -1,5 +1,5 @@
 public class User {
-    public String username;   // Nom d'utilisateur
+    private String username;   // Nom d'utilisateur
     private String passwordHash;  // Mot de passe (privé)
     private String salt;
     public boolean isAdmin;   // Indique si l'utilisateur est un administrateur
