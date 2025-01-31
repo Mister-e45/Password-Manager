@@ -1,5 +1,5 @@
 public class User {
-    public String username;   // Nom d'utilisateur
+    private String username;   // Nom d'utilisateur
     private String passwordHash;  // Mot de passe (privé)
     private String salt;
     public boolean isAdmin;   // Indique si l'utilisateur est un administrateur
@@ -32,12 +32,7 @@ public class User {
         salt=newPasswordSalt;
     }
     
-/* 
-    // Méthode pour récupérer l'identifiant de l'utilisateur
-    public int getUserId() {
-        return id;
-    }
-*/
+
     // Méthode pour récupérer le nom d'utilisateur
     public String getUsername() {
         return username;
