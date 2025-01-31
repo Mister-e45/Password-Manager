@@ -111,9 +111,6 @@ public class PasswordManager {
         //String storedData = userAccounts.get(username);
     
         boolean success=vault.logUser(username, masterPassword);
-        //String[] parts = storedData.split(":");
-        //String hashedPassword = parts[0];
-        //byte[] salt = Base64.getDecoder().decode(parts[1]);
     
         
         if (!success) {
