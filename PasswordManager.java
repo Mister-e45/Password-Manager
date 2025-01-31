@@ -18,7 +18,7 @@ public class PasswordManager {
     }
 
     public void start() {
-        System.out.println("Bienvenue dans SecurePasWordManager !");
+        System.out.println("Bienvenue dans PasswordManager !");
         
         while (true) {
             System.out.println("\nMenu:");
